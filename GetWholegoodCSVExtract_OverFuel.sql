@@ -184,7 +184,9 @@ BEGIN
           MAX(CASE WHEN v.UDF_ID = 121 THEN CAST(v.FieldValue AS nvarchar(max)) END) AS [SellReady(Service)],
           MAX(CASE WHEN v.UDF_ID = 80  THEN CAST(v.FieldValue AS nvarchar(max)) END) AS ChassisStatus,
           -- Manager Special (UDF_ID 124)
-          MAX(CASE WHEN v.UDF_ID = 124 THEN CAST(v.FieldValue AS nvarchar(max)) END) AS ManagerSpecial
+          MAX(CASE WHEN v.UDF_ID = 124 THEN CAST(v.FieldValue AS nvarchar(max)) END) AS ManagerSpecial,
+          -- Main Street flag (UDF_ID 122)
+          MAX(CASE WHEN v.UDF_ID = 122 THEN CAST(v.FieldValue AS nvarchar(max)) END) AS MainStreetFlag
       FROM dbo.UserDefinedFieldValue v
       GROUP BY v.Party_ID
   ),
@@ -301,9 +303,22 @@ BEGIN
   LEFT  JOIN dbo.WGModel               refModel    ON wg.ModelID    = refModel.Database_ID
   LEFT  JOIN UDFMap u ON u.Party_ID = wg.Wholegood_ID
   WHERE wg.SalesStatus IN (2,4)
-  AND (CurrentOwnerCustomer_ID <> 2532 OR CurrentOwnerCustomer_ID IS NULL)
-  AND (CurrentOwnerCustomer_ID <> 2678 OR CurrentOwnerCustomer_ID IS NULL)
-  AND wg.Inactive = 0;
+  AND wg.Inactive = 0
+  AND L.Company_ID IN (2, 115)
+  AND (
+        -- Normal path: Company 2, not owned by Matran customer IDs
+        (
+          L.Company_ID = 2
+          AND (wg.CurrentOwnerCustomer_ID <> 2532 OR wg.CurrentOwnerCustomer_ID IS NULL)
+          AND (wg.CurrentOwnerCustomer_ID <> 2678 OR wg.CurrentOwnerCustomer_ID IS NULL)
+        )
+        -- Main Street carve-in: Company 115, Location_ID > 100, UDF 122 = 'Yes'
+        OR (
+          L.Company_ID = 115
+          AND wg.CurrentOwnerLocation_ID > 100
+          AND COALESCE(u.MainStreetFlag, '') = 'Yes'
+        )
+      );
 
 
   SET @RowsInserted = @@ROWCOUNT;
