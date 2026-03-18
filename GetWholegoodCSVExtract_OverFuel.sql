@@ -1,6 +1,6 @@
 USE [WinNetStarApp]
 GO
-/****** Object:  StoredProcedure [dbo].[GetWholegoodCSVExtract_OverFuel]    Script Date: 2/18/2026 2:03:12 PM ******/
+/****** Object:  StoredProcedure [dbo].[GetWholegoodCSVExtract_OverFuel]    Script Date: 3/18/2026 8:05:44 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,7 +8,7 @@ GO
 --DECLARE
 ALTER PROCEDURE [dbo].[GetWholegoodCSVExtract_OverFuel]
   @InterfaceName    VARCHAR(50)    = 'OverFuelUpload',
-  @Company_ID       INT            = 2,        -- 0 = all companies
+  @Company_ID       INT            = 0,        -- 0 = all companies
   @Location_ID      INT            = 0,        -- 0 = all locations (within company scope)
   @LocationList     NVARCHAR(MAX)  = NULL,     -- e.g. N'2,5' explicit list (intersected with @Company_ID when > 0)
   @OPT_ZIP          BIT            = 0,        -- 1 = zip final CSV
@@ -301,6 +301,8 @@ BEGIN
   LEFT  JOIN dbo.WGModel               refModel    ON wg.ModelID    = refModel.Database_ID
   LEFT  JOIN UDFMap u ON u.Party_ID = wg.Wholegood_ID
   WHERE wg.SalesStatus IN (2,4)
+  AND (CurrentOwnerCustomer_ID <> 2532 OR CurrentOwnerCustomer_ID IS NULL)
+  AND (CurrentOwnerCustomer_ID <> 2678 OR CurrentOwnerCustomer_ID IS NULL)
   AND wg.Inactive = 0;
 
 
